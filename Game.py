@@ -1,5 +1,6 @@
 import pygame, os
 import numpy as np
+import random
 
 # Position game window in center of screen
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -15,6 +16,7 @@ oImage = pygame.image.load("o.jpg")
 
 # Set window icon
 pygame.display.set_icon(xImage)
+
 
 # Represents a Tic-Tac-Toe board
 class Board:
@@ -32,8 +34,16 @@ class Board:
         else:
             self.currentTurn = 1;
 
-    def move_legal(self, row, column):
-        return self.values[row, column] is None
+    def move_wins(self, marker):
+        if self.get_winner() is None and self.move_legal(marker):
+            self.values[marker.row, marker.column] = marker
+            wins = self.get_winner() is not None
+            self.values[marker.row, marker.column] = None
+            return wins
+        return False
+
+    def move_legal(self, marker):
+        return self.values[marker.row, marker.column] is None
 
     def get_winner(self):
         if self.column_winner() is not None:
@@ -81,6 +91,29 @@ class Board:
                     return False
         return True
 
+    def corner_available(self):
+        return self.values[0,0] is None or self.values[0, 2] is None or self.values[2, 0] is None or self.values[2, 2] is None
+
+    def get_open_corner(self):
+        if self.values[0,0] is None:
+            return 0, 0
+        elif self.values[0, 2] is None:
+            return 0, 2
+        elif self.values[2, 0] is None:
+            return 2, 0
+        else:
+            return 2, 2
+
+    # Scan left to right, starting at top right, until a square is empty
+    def get_random_available(self):
+        available = []
+        for row in range(3):
+            for column in range(3):
+                if self.values[row][column] is None:
+                    available.append((row, column))
+        rand = available[random.randint(0, len(available) - 1)]
+        return rand[0], rand[1]
+
 
 class Player:
     def __init__(self, turn_order):
@@ -113,8 +146,8 @@ class Marker:
 font = pygame.font.Font('freesansbold.ttf', 32)
 
 # Contain coordinates of top left point of each row and column
-row_coordinates = [65, 235, 420]
-column_coordinates = [55, 200, 395]
+row_coordinates = [60, 235, 415]
+column_coordinates = [55, 210, 395]
 
 
 # Updates all images to be displayed
@@ -138,7 +171,7 @@ def display_turn_text(markers, victory_status):
     if victory_status == "win":
         string = "Congratulations Player " + str(len(markers) % 2 + 1) + "! You win!"
     elif victory_status == "ongoing":
-        string = "Player " + str(len(markers) % 2 + 1) + "'s turn"
+        string = "There are still moves remaining"
     else:
         string = "The game has ended in a tie"
     text = font.render(string, True, (0, 0, 0), (255, 255, 255))
@@ -151,18 +184,34 @@ def display_turn_text(markers, victory_status):
 def coord_to_block(variable):
     if variable == "x":
         x = 0
-        if 200 < pos[0] <= 395:
-            x = 1;
-        elif 395 < pos[0]:
-            x = 2;
+        if column_coordinates[1] < pos[0] <= column_coordinates[2]:
+            x = 1
+        elif column_coordinates[2] < pos[0]:
+            x = 2
         return x
     else:
         y = 0
-        if 235 < pos[1] <= 420:
-            y = 1;
-        elif 420 < pos[1]:
-            y = 2;
+        if row_coordinates[1] < pos[1] <= row_coordinates[2]:
+            y = 1
+        elif row_coordinates[2] < pos[1]:
+            y = 2
         return y
+
+
+# Check if either player can win on this move, make the move if so
+def block_or_win():
+    for row in range(3):
+        for column in range(3):
+            move = Marker(ai, column, row)
+            player_move = Marker(player, column, row)
+            if board.move_wins(move):
+                board.insert_marker(move)
+                return
+            elif board.move_wins(player_move):
+                board.insert_marker(move)
+                return
+
+
 
 running = True
 
@@ -171,8 +220,8 @@ while running:
     done = False
     markers = []
     board = Board()
-    player1 = Player(1)
-    player2 = Player(2)
+    player = Player(1)
+    ai = Player(2)
 
     while not done:
         draw(markers)
@@ -188,19 +237,29 @@ while running:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
-        if pos is not None and done is False:
-            x = coord_to_block("x")
-            y = coord_to_block("y")
+        # The user's turn
+        if board.currentTurn == 1:
+            if pos is not None and done is False:
+                x = coord_to_block("x")
+                y = coord_to_block("y")
 
-            marker = None
-            if board.currentTurn == 1:
-                marker = Marker(player1, x, y)
-            else:
-                marker = Marker(player2, x, y)
+                marker = Marker(player, x, y)
 
-            if board.move_legal(y, x):
-                board.insert_marker(marker)
-            else:
-                continue
+                if board.move_legal(marker):
+                    board.insert_marker(marker)
+                else:
+                    continue
+
+        # The opponent's (AI) turn
+        else:
+            # First check if can win or block user's win
+            block_or_win()
+            # Otherwise, place in random open spot
+            if board.currentTurn == 2 and not board.is_full():
+                open_coords = board.get_random_available()
+                move = Marker(ai, open_coords[1], open_coords[0])
+                board.insert_marker(move)
+
+
 
 pygame.quit()
