@@ -74,6 +74,13 @@ class Board:
         if self.check_diagonal():
             return self.values[1, 1]
 
+    def is_full(self):
+        for row in self.values:
+            for column in row:
+                if column is None:
+                    return False
+        return True
+
 
 class Player:
     def __init__(self, turn_order):
@@ -114,9 +121,11 @@ column_coordinates = [55, 200, 395]
 def draw(markers):
     window.blit(background_image, (0, 0))
     if board.get_winner() is not None:
-        display_turn_text(markers, True)
+        display_turn_text(markers, "win")
+    elif not board.is_full():
+        display_turn_text(markers, "ongoing")
     else:
-        display_turn_text(markers, False)
+        display_turn_text(markers, "draw")
     if len(markers) > 0:
         for marker in markers:
             window.blit(marker.image, (marker.column_coordinate, marker.row_coordinate))
@@ -126,10 +135,12 @@ def draw(markers):
 
 # Updates text to be displayed, either end of game message or current player's turn
 def display_turn_text(markers, victory_status):
-    if victory_status:
+    if victory_status == "win":
         string = "Congratulations Player " + str(len(markers) % 2 + 1) + "! You win!"
-    else:
+    elif victory_status == "ongoing":
         string = "Player " + str(len(markers) % 2 + 1) + "'s turn"
+    else:
+        string = "The game has ended in a tie"
     text = font.render(string, True, (0, 0, 0), (255, 255, 255))
     text_rect = text.get_rect()
     text_rect.center = (585 // 2, 25)
@@ -165,10 +176,9 @@ while running:
 
     while not done:
         draw(markers)
-        if board.get_winner() is not None:
+        if board.get_winner() is not None or board.is_full():
             done = True
             pygame.time.delay(3000)
-
 
         pos = None
         for event in pygame.event.get():
