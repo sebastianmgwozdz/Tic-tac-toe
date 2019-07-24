@@ -1,8 +1,7 @@
 import pygame, os
 import numpy as np
-#TODO: Set window icon
-#TODO: Make images transparent
 
+# Position game window in center of screen
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 pygame.init()
@@ -11,8 +10,13 @@ window = pygame.display.set_mode((585, 585))
 pygame.display.set_caption("Tic-Tac-Toe")
 
 background_image = pygame.image.load("game_board.jpg")
+xImage = pygame.image.load("x.jpg")
+oImage = pygame.image.load("o.jpg")
 
+# Set window icon
+pygame.display.set_icon(xImage)
 
+# Represents a Tic-Tac-Toe board
 class Board:
     def __init__(self):
         self.currentTurn = 1
@@ -73,6 +77,7 @@ class Board:
 
 class Player:
     def __init__(self, turn_order):
+        # First player's marker is an X, second is O
         if turn_order == 1:
             self.shape = "x"
         else:
@@ -82,15 +87,16 @@ class Player:
 class Marker:
     def __init__(self, player, column, row):
         if player.shape == "x":
-            self.image = pygame.image.load("x.jpg")
+            self.image = xImage
         else:
-            self.image = pygame.image.load("o.jpg")
+            self.image = oImage
         self.column = column
         self.row = row
         self.row_coordinate = row_coordinates[row]
         self.column_coordinate = column_coordinates[column]
         self.player = player
 
+    # Determine if two markers are equal by comparing players
     def __eq__(self, other):
         if other is None:
             return False
@@ -98,10 +104,13 @@ class Marker:
 
 
 font = pygame.font.Font('freesansbold.ttf', 32)
+
+# Contain coordinates of top left point of each row and column
 row_coordinates = [65, 235, 420]
 column_coordinates = [55, 200, 395]
 
 
+# Updates all images to be displayed
 def draw(markers):
     window.blit(background_image, (0, 0))
     if board.get_winner() is not None:
@@ -115,6 +124,7 @@ def draw(markers):
     pygame.display.update()
 
 
+# Updates text to be displayed, either end of game message or current player's turn
 def display_turn_text(markers, victory_status):
     if victory_status:
         string = "Congratulations Player " + str(len(markers) % 2 + 1) + "! You win!"
@@ -126,6 +136,7 @@ def display_turn_text(markers, victory_status):
     window.blit(text, text_rect)
 
 
+# Convert exact pixel to row or column
 def coord_to_block(variable):
     if variable == "x":
         x = 0
@@ -142,39 +153,44 @@ def coord_to_block(variable):
             y = 2;
         return y
 
+running = True
 
-done = False
-markers = []
-board = Board()
-player1 = Player(1)
-player2 = Player(2)
+while running:
 
-while not done:
-    draw(markers)
-    if board.get_winner() is not None:
-        done = True
+    done = False
+    markers = []
+    board = Board()
+    player1 = Player(1)
+    player2 = Player(2)
 
-
-    pos = None
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    while not done:
+        draw(markers)
+        if board.get_winner() is not None:
             done = True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            pos = pygame.mouse.get_pos()
+            pygame.time.delay(3000)
 
-    if pos is not None and done is False:
-        x = coord_to_block("x")
-        y = coord_to_block("y")
 
-        marker = None
-        if board.currentTurn == 1:
-            marker = Marker(player1, x, y)
-        else:
-            marker = Marker(player2, x, y)
+        pos = None
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
 
-        if board.move_legal(y, x):
-            board.insert_marker(marker)
-        else:
-            break
+        if pos is not None and done is False:
+            x = coord_to_block("x")
+            y = coord_to_block("y")
+
+            marker = None
+            if board.currentTurn == 1:
+                marker = Marker(player1, x, y)
+            else:
+                marker = Marker(player2, x, y)
+
+            if board.move_legal(y, x):
+                board.insert_marker(marker)
+            else:
+                continue
 
 pygame.quit()
