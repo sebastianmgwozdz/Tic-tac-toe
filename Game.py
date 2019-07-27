@@ -30,9 +30,9 @@ class Board:
         self.values[marker.row, marker.column] = marker
         markers.append(marker)
         if self.currentTurn == 1:
-            self.currentTurn = 2;
+            self.currentTurn = 2
         else:
-            self.currentTurn = 1;
+            self.currentTurn = 1
 
     def move_wins(self, marker):
         if self.get_winner() is None and self.move_legal(marker):
@@ -55,7 +55,8 @@ class Board:
         return None
 
     def check_column(self, column):
-        return self.values[0, column] == self.values[1, column] and self.values[1, column] == self.values[2, column] and self.values[0, column] is not None
+        return self.values[0, column] == self.values[1, column] and self.values[1, column] == self.values[2, column] \
+               and self.values[0, column] is not None
 
     def column_winner(self):
         for column in range(3):
@@ -64,7 +65,8 @@ class Board:
         return None
 
     def check_row(self, row):
-        return self.values[row, 0] == self.values[row, 1] and self.values[row, 1] == self.values[row, 2] and self.values[row, 0] is not None
+        return self.values[row, 0] == self.values[row, 1] and self.values[row, 1] == self.values[row, 2] and \
+               self.values[row, 0] is not None
 
     def row_winner(self):
         for row in range(3):
@@ -92,10 +94,11 @@ class Board:
         return True
 
     def corner_available(self):
-        return self.values[0,0] is None or self.values[0, 2] is None or self.values[2, 0] is None or self.values[2, 2] is None
+        return self.values[0, 0] is None or self.values[0, 2] is None or self.values[2, 0] is None or \
+               self.values[2, 2] is None
 
     def get_open_corner(self):
-        if self.values[0,0] is None:
+        if self.values[0, 0] is None:
             return 0, 0
         elif self.values[0, 2] is None:
             return 0, 2
@@ -212,34 +215,33 @@ def block_or_win():
                 return
 
 
-
 running = True
 
 while running:
 
-    done = False
+    round_over = False
     markers = []
     board = Board()
     player = Player(1)
     ai = Player(2)
 
-    while not done:
+    while not round_over:
         draw(markers)
         if board.get_winner() is not None or board.is_full():
-            done = True
+            round_over = True
             pygame.time.delay(3000)
 
         pos = None
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                done = True
+                round_over = True
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
         # The user's turn
         if board.currentTurn == 1:
-            if pos is not None and done is False:
+            if pos is not None and not round_over:
                 x = coord_to_block("x")
                 y = coord_to_block("y")
 
@@ -247,8 +249,6 @@ while running:
 
                 if board.move_legal(marker):
                     board.insert_marker(marker)
-                else:
-                    continue
 
         # The opponent's (AI) turn
         else:
@@ -259,7 +259,6 @@ while running:
                 open_coords = board.get_random_available()
                 move = Marker(ai, open_coords[1], open_coords[0])
                 board.insert_marker(move)
-
 
 
 pygame.quit()
